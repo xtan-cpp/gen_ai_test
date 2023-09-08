@@ -1,114 +1,68 @@
-import poly_scrapper as ps
-import file_manager as fm
-import time
-import datetime
-import re
-import os
+import requests
+import json
+from tkinter import *
 
-def replace_non_ascii(unicode_string):
+window = Tk()
 
-    real = re.sub('[\W_]+', '', unicode_string)
-    real = real.replace(" ", "")
+window.title("Covid-19")
 
-    return real
+window.geometry('240x150')
 
-def main():
-    """ Start point of app """
+t = Entry(window)
+t.grid(row=0, column=1, columnspan=10, pady=10)
 
-    # Driver path
-    driverPath = os.path.dirname(os.path.abspath(__file__)) + '/chromedriver_win32/chromedriver.exe'
+lbl1 = Label(window)
+lbl = Label(window)
+lbl3 = Label(window)
+lbl4 = Label(window)
+lbl2 = Label(window)
+lbl4.grid(column=1, row=1)
+lbl1.grid(column=1, row=2)
+lbl.grid(column=1, row=3)
+lbl3.grid(column=1, row=4)
+lbl2.grid(column=1, row=5)
 
-    # Objects
-    objFileManager = fm.FileManager()
-    objScrapper = ps.PolyScrapper(driverPath)
 
-    # Get words to search from file (words.txt)
-    searchTexts = objFileManager.read_all_words()
-    for i in range(len(searchTexts)):
-        searchTexts[i] = searchTexts[i].rstrip()
+def clicked():
+    url = "https://api.covid19india.org/data.json"
+    page = requests.get(url)
 
-    # Count of max download per searched text.
-    maxDownloadCountPerItem = 50
+    data = json.loads(page.text)
 
-    for searchText in searchTexts:
-        print("--------------------> Searching:" + searchText)
+    name = t.get()
 
-        # Create sub folder in destinationPath
-        objFileManager.create_folder(searchText)
+    c = 0;
+    for i in range(38):
+        if (str((data["statewise"][i]["state"]).lower().replace(" ", "")) == str(name).lower().replace(" ", "") or str(
+                (data["statewise"][i]["statecode"]).lower().replace(" ", "")) == str(name).lower().replace(" ", "")):
+            lbl1.configure(text="Total Confirmed cases :- "
+                                + data["statewise"][i]["confirmed"])
 
-        # Search
-        objScrapper.search(searchText)
-        time.sleep(4)
+            lbl.configure(text="Total active cases :- "
+                               + data["statewise"][i]["active"])
 
-        # Filter founded items
-        objScrapper.filter()
-        time.sleep(2)
+            lbl3.configure(text="Total deaths :- "
+                                + data["statewise"][i]["deaths"])
 
-        # Get founded total item count
-        itemCount = int(objScrapper.get_item_count())
-        maxItemCount = maxDownloadCountPerItem
-        if itemCount < maxDownloadCountPerItem:
-            maxItemCount = itemCount
-        print("--------------------> ItemCount:" + str(itemCount))
-        
-        # Scroll a couple times to load enough item to screen.
-        objScrapper.scroll_down()
-        time.sleep(1)
-        objScrapper.scroll_down()
-        time.sleep(1)
-        objScrapper.scroll_down()
-        time.sleep(1)
-        objScrapper.scroll_down()
-        time.sleep(1)
+            lbl4.configure(text="State :- "
+                                + data["statewise"][i]["state"])
 
-        # Download all founded items one by one
-        for index in range(maxItemCount):
-            realIndex = index + 1
-            print("Index:" + str(realIndex) + " at " + str(datetime.datetime.now()))
+            lbl2.configure(text="Data Refreshed")
+            c = 1
 
-            # Click Item
-            isClickSuccess = objScrapper.click_element(realIndex)
-            if isClickSuccess:
-                time.sleep(2)
+    if c == 0:
+        lbl.configure(text="Total active cases :- 0")
 
-                isPageExist = objScrapper.is_page_exist()
+        lbl1.configure(text="Total Confirmed cases :- 0")
 
-                if isPageExist:
-                    
-                    # Remove non-ascii characters from name
-                    name = objScrapper.get_name()
-                    name = replace_non_ascii(name)
+        lbl3.configure(text="Total deaths :- 0")
 
-                    # Is item already downloaded?
-                    isFileExist = objFileManager.has_file(name, searchText)
+        lbl4.configure(text="State :- Enter valid state")
 
-                    #
-                    if isFileExist == False:
-                        isSuccess = objScrapper.download()
-                        if isSuccess:
-                            # Wait until download finish
-                            while True:
-                                if objFileManager.is_download_finished() == True:
-                                    break
-                                time.sleep(0.25)
+        lbl2.configure(text="NO Data Found")
 
-                            # Move downloaded file to correct folder
-                            objFileManager.create_folder(searchText)
-                            objFileManager.cut_and_paste_last_file(searchText, name)
-                        else:
-                            print("Download failed")
-                            objScrapper.return_to_first_tab()
-                    else:
-                        print("File already exist")
-                        objScrapper.return_to_first_tab()
-                else:
-                    print("File already exist")
-                    objScrapper.return_to_first_tab()
-            #
-            time.sleep(0.5)
 
-    objScrapper.quit()
-    print("ALL DONE!")
+btn = Button(window, text="Search", command=clicked)
+btn.grid(column=13, row=0)
 
-if __name__ == "__main__":
-    main()
+window.mainloop()

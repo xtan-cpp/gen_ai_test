@@ -1,9 +1,4 @@
-# gen_ai_test
+# Covid-19-Tracker
+This is GUI app build using python , which will give you number of Total Confirmed Cases , Total Active Cases and Total Deaths in India states.
 
-This repo contains code for a web scrapper.
-
-## Software Requirements
-You'll need the following software to be able to run this project:
-- Anaconda (Python and environment management)
-- git (Source code control)
-- PyCharm (Optional: for Development)
+This app will fetch data from " https://api.covid19india.org/data.json ".
